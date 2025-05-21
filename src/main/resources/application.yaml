@@ -1,0 +1,14 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      timeout: 10m
+  tomcat:
+    connection-timeout: 10m
+spring:
+  application:
+    name: ms-parser
+  profiles:
+    active:
+      - logger
+      - db
