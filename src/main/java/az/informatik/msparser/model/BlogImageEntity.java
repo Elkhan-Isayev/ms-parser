@@ -18,8 +18,11 @@ public class BlogImageEntity {
     @JoinColumn(name = "post_id")
     private BlogPostEntity post;
 
+    @Column(length = 500)
     private String url;
+    @Column(length = 500)
     private String title;
+    @Column(length = 500)
     private String description;
 
     @Column(name = "\"order\"")

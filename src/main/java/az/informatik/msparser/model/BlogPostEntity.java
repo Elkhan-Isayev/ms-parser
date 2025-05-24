@@ -16,14 +16,16 @@ public class BlogPostEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 5000, nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 5000, columnDefinition = "TEXT")
     private String content;
 
     @Column(length = 500)
     private String excerpt;
 
+    @Column(length = 500)
     private String image;
 
     @Column(name = "category_id")

@@ -25,6 +25,7 @@ import static az.informatik.msparser.util.ContentUtil.getTextContent;
 import static az.informatik.msparser.util.CreateDateUtil.getCreateDate;
 import static az.informatik.msparser.util.CreateTimeUtil.getCreateTime;
 import static az.informatik.msparser.util.FileUtil.getFileUrls;
+import static az.informatik.msparser.util.FileUtil.getSavedFileNames;
 import static az.informatik.msparser.util.TitleUtil.getTitle;
 import static az.informatik.msparser.util.ViewCountUtil.getViewCount;
 
@@ -73,17 +74,49 @@ public class MainService {
         return newsLinks;
     }
 
+//    @SneakyThrows
+//    private void iterateOverNews(List<String> links) {
+//        String newsCommonLink = "https://www.informatik.az";
+//        for (String link : links) {
+//            log.info("Starting article ---------> {}", link);
+//            String currentLink = newsCommonLink + link;
+//            Document doc = Jsoup.connect(currentLink)
+//                    .userAgent("Mozilla/5.0")
+//                    .timeout(10000)
+//                    .get();
+//            parseArticlePage(doc);
+//        }
+//    }
+
     @SneakyThrows
     private void iterateOverNews(List<String> links) {
         String newsCommonLink = "https://www.informatik.az";
+        int count = 0;
+
         for (String link : links) {
             log.info("Starting article ---------> {}", link);
             String currentLink = newsCommonLink + link;
-            Document doc = Jsoup.connect(currentLink)
-                    .userAgent("Mozilla/5.0")
-                    .timeout(10000)
-                    .get();
-            parseArticlePage(doc);
+
+            try {
+                Document doc = Jsoup.connect(currentLink)
+                        .userAgent("Mozilla/5.0")
+                        .timeout(15000)
+                        .get();
+                parseArticlePage(doc);
+            } catch (Exception e) {
+                log.warn("Failed to fetch: {} | Reason: {}", currentLink, e.getMessage());
+            }
+
+            count++;
+
+            // Short delay between requests
+            Thread.sleep(300);
+
+            // Longer pause every 10 requests
+            if (count % 10 == 0) {
+                log.info("Processed {} articles. Sleeping for 1 second...", count);
+                Thread.sleep(1000);
+            }
         }
     }
 
@@ -92,6 +125,9 @@ public class MainService {
         if (mainBlock == null) return;
 
         List<String> fileUrls = getFileUrls(mainBlock);
+        // >>> Faylları yadda saxla, adlarını al:
+        List<String> savedFilenames = getSavedFileNames(fileUrls);
+
         String title = getTitle(doc);
         String content = getTextContent(mainBlock);
         String author = getAuthor(doc);
@@ -105,7 +141,7 @@ public class MainService {
         LocalDateTime createdAt = (date != null && time != null) ? LocalDateTime.of(date, time) : LocalDateTime.now();
 
         String excerpt = (content.length() > 300) ? content.substring(0, 300) : content;
-        String image = (fileUrls != null && !fileUrls.isEmpty()) ? fileUrls.get(0) : null;
+        String image = (savedFilenames != null && !savedFilenames.isEmpty()) ? savedFilenames.get(0) : null;
 
         BlogPostEntity post = new BlogPostEntity();
         post.setTitle(title);
@@ -118,11 +154,11 @@ public class MainService {
         post.setUpdatedAt(createdAt);
 
         List<BlogImageEntity> imageEntities = new ArrayList<>();
-        if (fileUrls != null) {
-            for (int i = 0; i < fileUrls.size(); i++) {
+        if (savedFilenames != null) {
+            for (int i = 0; i < savedFilenames.size(); i++) {
                 BlogImageEntity img = new BlogImageEntity();
                 img.setId(UUID.randomUUID().toString());
-                img.setUrl(fileUrls.get(i));
+                img.setUrl(savedFilenames.get(i));
                 img.setPost(post);
                 img.setTitle(title);
                 img.setDescription(excerpt);
